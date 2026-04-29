@@ -49,13 +49,6 @@ def subscribe_webhooks():
 
 	expected_subscriptions = get_expected_webhook_subscriptions(tracking_url, submission_url)
 	existing_subscriptions = get_existing_webhook_subscriptions(bobgo_utils)
-	stale_subscription_ids = get_stale_webhook_subscription_ids(
-		existing_subscriptions, expected_subscriptions
-	)
-	if stale_subscription_ids:
-		bobgo_utils.request("DELETE", "webhooks", json={"ids": stale_subscription_ids})
-		existing_subscriptions = get_existing_webhook_subscriptions(bobgo_utils)
-
 	missing_subscriptions = [
 		subscription
 		for subscription in expected_subscriptions
@@ -173,31 +166,6 @@ def has_matching_active_subscription(subscriptions: list[dict], expected_subscri
 		return True
 
 	return False
-
-
-def get_stale_webhook_subscription_ids(
-	subscriptions: list[dict], expected_subscriptions: list[dict]
-) -> list[int]:
-	expected_urls_by_topic = {
-		(subscription.get("topic") or "").strip(): (subscription.get("delivery_url") or "").strip()
-		for subscription in expected_subscriptions
-	}
-	stale_ids = []
-
-	for subscription in subscriptions:
-		topic = (subscription.get("topic") or "").strip()
-		if topic not in expected_urls_by_topic:
-			continue
-		if (subscription.get("status") or "").strip().lower() != "active":
-			continue
-		if (subscription.get("delivery_url") or "").strip() == expected_urls_by_topic[topic]:
-			continue
-
-		subscription_id = subscription.get("id")
-		if subscription_id:
-			stale_ids.append(subscription_id)
-
-	return stale_ids
 
 
 def get_webhook_sync_context():
