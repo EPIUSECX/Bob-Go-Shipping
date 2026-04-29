@@ -4,6 +4,7 @@ app_publisher = "Janlu Paulsen"
 app_description = "Bob Go Shipping integration"
 app_email = "janlu.paulsen@epiuse.com"
 app_license = "mit"
+required_apps = ["erpnext"]
 
 # Apps
 # ------------------
@@ -26,7 +27,7 @@ app_license = "mit"
 
 # include js, css files in header of desk.html
 # app_include_css = "/assets/bobgoshipping/css/bobgoshipping.css"
-# app_include_js = "/assets/bobgoshipping/js/bobgoshipping.js"
+app_include_js = "shipping.bundle.js"
 
 # include js, css files in header of web template
 # web_include_css = "/assets/bobgoshipping/css/bobgoshipping.css"
@@ -43,7 +44,7 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {"Shipment": "public/js/shipment.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -86,7 +87,7 @@ app_license = "mit"
 # ------------
 
 # before_install = "bobgoshipping.install.before_install"
-# after_install = "bobgoshipping.install.after_install"
+after_install = "bobgoshipping.install.after_install"
 
 # Uninstallation
 # ------------
@@ -149,23 +150,7 @@ app_license = "mit"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"bobgoshipping.tasks.all"
-# 	],
-# 	"daily": [
-# 		"bobgoshipping.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"bobgoshipping.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"bobgoshipping.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"bobgoshipping.tasks.monthly"
-# 	],
-# }
+scheduler_events = {"daily": ["bobgoshipping.bobgoshipping.utils.update_tracking_info_daily"]}
 
 # Testing
 # -------
@@ -251,8 +236,16 @@ app_license = "mit"
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+doc_events = {
+	"Shipment": {
+		"validate": [
+			"bobgoshipping.bobgoshipping.utils.validate_parcels",
+			"bobgoshipping.bobgoshipping.utils.validate_phone",
+		]
+	},
+}
+
 # Translation
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
-
