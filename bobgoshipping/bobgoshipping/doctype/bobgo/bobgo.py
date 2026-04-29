@@ -5,7 +5,6 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils import get_url
-from frappe.utils.password import get_decrypted_password
 from urllib.parse import quote
 
 from .client import (
@@ -50,6 +49,13 @@ def subscribe_webhooks():
 
 	expected_subscriptions = get_expected_webhook_subscriptions(tracking_url, submission_url)
 	existing_subscriptions = get_existing_webhook_subscriptions(bobgo_utils)
+	stale_subscription_ids = get_stale_webhook_subscription_ids(
+		existing_subscriptions, expected_subscriptions
+	)
+	if stale_subscription_ids:
+		bobgo_utils.request("DELETE", "webhooks", json={"ids": stale_subscription_ids})
+		existing_subscriptions = get_existing_webhook_subscriptions(bobgo_utils)
+
 	missing_subscriptions = [
 		subscription
 		for subscription in expected_subscriptions
@@ -75,11 +81,11 @@ def refresh_webhook_status():
 
 
 def get_bobgo_webhook_url(webhook_type: str) -> str:
-	webhook_secret = get_decrypted_password("BobGo", "BobGo", "webhook_secret")
+	webhook_secret = get_bobgo_webhook_secret()
 	if not webhook_secret:
 		frappe.throw(_("Please set the Bob Go Webhook Secret first."), title=_("Bob Go"))
 
-	base_url = get_url().rstrip("/")
+	base_url = get_bobgo_public_base_url()
 	secret = quote(webhook_secret, safe="")
 
 	if webhook_type == "tracking":
@@ -97,6 +103,36 @@ def get_bobgo_webhook_url(webhook_type: str) -> str:
 		)
 
 	frappe.throw(_("Unknown Bob Go webhook type: {0}").format(webhook_type), title=_("Bob Go"))
+
+
+def get_bobgo_public_base_url() -> str:
+	if getattr(frappe.local, "request", None):
+		proto = (
+			frappe.get_request_header("X-Forwarded-Proto")
+			or frappe.get_request_header("X-Forwarded-Protocol")
+			or frappe.request.scheme
+			or "https"
+		)
+		host = (
+			frappe.get_request_header("X-Forwarded-Host")
+			or frappe.get_request_header("Host")
+			or frappe.request.host
+		)
+		if host:
+			return f"{proto.split(',')[0].strip()}://{host.split(',')[0].strip()}".rstrip("/")
+
+	return get_url().rstrip("/")
+
+
+def get_bobgo_webhook_secret() -> str | None:
+	settings = frappe.get_single("BobGo")
+	try:
+		return settings.get_password("webhook_secret")
+	except frappe.ValidationError:
+		frappe.throw(
+			_("Please re-enter the Bob Go Webhook Secret and save the settings."),
+			title=_("Bob Go"),
+		)
 
 
 def get_webhook_subscription_statuses(
@@ -137,6 +173,31 @@ def has_matching_active_subscription(subscriptions: list[dict], expected_subscri
 		return True
 
 	return False
+
+
+def get_stale_webhook_subscription_ids(
+	subscriptions: list[dict], expected_subscriptions: list[dict]
+) -> list[int]:
+	expected_urls_by_topic = {
+		(subscription.get("topic") or "").strip(): (subscription.get("delivery_url") or "").strip()
+		for subscription in expected_subscriptions
+	}
+	stale_ids = []
+
+	for subscription in subscriptions:
+		topic = (subscription.get("topic") or "").strip()
+		if topic not in expected_urls_by_topic:
+			continue
+		if (subscription.get("status") or "").strip().lower() != "active":
+			continue
+		if (subscription.get("delivery_url") or "").strip() == expected_urls_by_topic[topic]:
+			continue
+
+		subscription_id = subscription.get("id")
+		if subscription_id:
+			stale_ids.append(subscription_id)
+
+	return stale_ids
 
 
 def get_webhook_sync_context():

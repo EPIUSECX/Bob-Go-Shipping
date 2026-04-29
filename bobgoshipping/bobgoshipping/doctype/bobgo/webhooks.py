@@ -23,6 +23,23 @@ MAX_WEBHOOK_BODY_BYTES = 128 * 1024
 
 @frappe.whitelist(allow_guest=True)
 def handle_tracking_webhook():
+	try:
+		return process_tracking_webhook()
+	except Exception as exc:
+		log_bobgo_webhook_failure("Bob Go Tracking Webhook Failed", exc)
+		raise
+
+
+@frappe.whitelist(allow_guest=True)
+def handle_submission_status_webhook():
+	try:
+		return process_submission_status_webhook()
+	except Exception as exc:
+		log_bobgo_webhook_failure("Bob Go Submission Webhook Failed", exc)
+		raise
+
+
+def process_tracking_webhook():
 	# Bob Go calls this endpoint with the full tracking timeline whenever shipment
 	# movement changes. We verify a shared secret before mutating any shipment data.
 	verify_bobgo_webhook_request()
@@ -34,7 +51,7 @@ def handle_tracking_webhook():
 
 	shipment_name = find_bobgo_shipment(tracking_reference=tracking_reference)
 	if not shipment_name:
-		log_bobgo_webhook("Bob Go Tracking Webhook", payload)
+		log_bobgo_webhook("Bob Go Tracking Webhook Unmatched", payload)
 		return {"ok": True, "matched": False}
 
 	shipment_doc = frappe.get_doc("Shipment", shipment_name)
@@ -63,8 +80,7 @@ def handle_tracking_webhook():
 	return {"ok": True, "matched": True}
 
 
-@frappe.whitelist(allow_guest=True)
-def handle_submission_status_webhook():
+def process_submission_status_webhook():
 	# Bob Go emits this whenever the booking submission lifecycle changes. This lets
 	# us reflect booking success/failure without waiting for the scheduler.
 	verify_bobgo_webhook_request()
@@ -76,7 +92,7 @@ def handle_submission_status_webhook():
 		tracking_reference=tracking_reference, shipment_id=shipment_identifier
 	)
 	if not shipment_name:
-		log_bobgo_webhook("Bob Go Submission Webhook", payload)
+		log_bobgo_webhook("Bob Go Submission Webhook Unmatched", payload)
 		return {"ok": True, "matched": False}
 
 	shipment_doc = frappe.get_doc("Shipment", shipment_name)
@@ -115,6 +131,41 @@ def handle_submission_status_webhook():
 	return {"ok": True, "matched": True}
 
 
+def log_bobgo_webhook_failure(title: str, exc: Exception):
+	try:
+		raw_body = frappe.request.get_data() or b""
+		body_preview = raw_body[:4096].decode("utf-8", errors="replace")
+		message = {
+			"error": str(exc),
+			"method": frappe.request.method,
+			"path": frappe.request.path,
+			"query": get_redacted_query_params(),
+			"headers": get_redacted_headers(),
+			"body_preview": body_preview,
+		}
+		frappe.log_error(title=title, message=json.dumps(message, indent=2, default=str))
+		frappe.db.commit()
+	except Exception:
+		frappe.logger("bobgoshipping").exception("Failed to log Bob Go webhook failure")
+
+
+def get_redacted_query_params() -> dict:
+	return {
+		key: "[redacted]" if "secret" in key.lower() else value
+		for key, value in frappe.request.args.items()
+	}
+
+
+def get_redacted_headers() -> dict:
+	headers = {}
+	for key, value in frappe.request.headers.items():
+		if key.lower() in {"authorization", "x-bobgo-webhook-secret", "x-bobgo-signature"}:
+			headers[key] = "[redacted]"
+		else:
+			headers[key] = value
+	return headers
+
+
 def verify_bobgo_webhook_request():
 	if frappe.request.method != "POST":
 		frappe.throw(_("Only POST is allowed for Bob Go webhooks."))
@@ -124,7 +175,13 @@ def verify_bobgo_webhook_request():
 		frappe.throw(_("Bob Go webhook requests must use application/json."), title=_("Bob Go"))
 
 	settings = frappe.get_single("BobGo")
-	expected_secret = settings.get_password("webhook_secret")
+	try:
+		expected_secret = settings.get_password("webhook_secret")
+	except frappe.ValidationError:
+		frappe.throw(
+			_("Please re-enter the Bob Go Webhook Secret and save the settings."),
+			title=_("Bob Go"),
+		)
 	if not expected_secret:
 		frappe.throw(_("Bob Go webhook secret is not configured."), title=_("Bob Go"))
 
