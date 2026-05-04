@@ -15,6 +15,24 @@ Bob Go: https://www.bobgo.co.za/
 - Write shipping and tracking information back to linked Delivery Notes in read-only custom fields.
 - Use Bob Go production or sandbox APIs from the same settings page.
 
+## Screenshots
+
+After **Fetch Shipping Rates**, choose a courier service in the selection dialog (preferred services appear when configured in Parcel Service Types).
+
+<img src="media/Screenshot%202026-05-04%20at%2019.36.43.png" alt="ERPNext Shipment: Select Service to Create Shipment dialog showing Bob Go carrier and price" width="800" style="max-width: 100%; height: auto;" />
+
+When Bob Go accepts the booking, ERPNext shows a confirmation with the Bob Go shipment number.
+
+<img src="media/Screenshot%202026-05-04%20at%2019.45.29.png" alt="Shipment Created success message after booking with Bob Go" width="800" style="max-width: 100%; height: auto;" />
+
+**Print Shipping Label** downloads the waybill from Bob Go and saves it as a PDF attachment on the Shipment.
+
+<img src="media/Screenshot%202026-05-04%20at%2019.45.42.png" alt="Bob Go shipping label PDF with carrier branding and barcodes" width="800" style="max-width: 100%; height: auto;" />
+
+The submitted Shipment stores Bob Go identifiers, carrier, service, amount, AWB, and tracking fields.
+
+<img src="media/Screenshot%202026-05-04%20at%2019.45.49.png" alt="ERPNext Shipment form with Bob Go service provider, shipment ID, and tracking status" width="800" style="max-width: 100%; height: auto;" />
+
 ## Compatibility and requirements
 
 - Frappe Framework: `>=15.0.0,<17.0.0`
