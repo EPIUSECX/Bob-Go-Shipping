@@ -132,6 +132,7 @@ def get_parcel_template_from_package(
 		"width": width,
 		"height": height,
 		"weight": weight,
+		"is_default": int(package.get("is_default") or package.get("default_package") or 0),
 	}
 
 

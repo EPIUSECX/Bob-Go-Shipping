@@ -2,6 +2,10 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("Shipment", {
+	onload: function (frm) {
+		frm.events.set_default_parcel_template(frm);
+	},
+
 	refresh: function (frm) {
 		if (frm.doc.docstatus === 1 && !frm.doc.shipment_id) {
 			frm.add_custom_button(__("Fetch Shipping Rates"), function () {
@@ -58,6 +62,21 @@ frappe.ui.form.on("Shipment", {
 				);
 			}
 		}
+	},
+
+	set_default_parcel_template: function (frm) {
+		if (!frm.is_new() || frm.doc.parcel_template) {
+			return;
+		}
+
+		frappe.call({
+			method: "bobgoshipping.bobgoshipping.utils.get_default_parcel_template",
+			callback: function (r) {
+				if (r.message && !frm.doc.parcel_template) {
+					frm.set_value("parcel_template", r.message);
+				}
+			},
+		});
 	},
 
 	fetch_shipping_rates: function (frm) {

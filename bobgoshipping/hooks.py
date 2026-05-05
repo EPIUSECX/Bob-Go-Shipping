@@ -243,6 +243,9 @@ doc_events = {
 			"bobgoshipping.bobgoshipping.utils.validate_phone",
 		]
 	},
+	"Shipment Parcel Template": {
+		"validate": "bobgoshipping.bobgoshipping.utils.validate_default_parcel_template",
+	},
 }
 
 # Translation

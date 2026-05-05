@@ -75,6 +75,24 @@ def validate_phone(doc, method=None):
 		frappe.throw(_("Pickup contact phone must consist of a '+' followed by one or more digits."))
 
 
+def validate_default_parcel_template(doc, method=None):
+	if not doc.get("is_default"):
+		return
+
+	frappe.db.set_value(
+		"Shipment Parcel Template",
+		{"name": ["!=", doc.name], "is_default": 1},
+		"is_default",
+		0,
+		update_modified=False,
+	)
+
+
+@frappe.whitelist()
+def get_default_parcel_template():
+	return frappe.db.get_value("Shipment Parcel Template", {"is_default": 1}, "name")
+
+
 def get_country_code(country_name):
 	country_code = frappe.db.get_value("Country", country_name, "code")
 	if not country_code:

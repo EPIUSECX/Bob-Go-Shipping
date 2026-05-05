@@ -3,6 +3,14 @@ from .utils import identity as _
 
 def get_custom_fields():
 	return {
+		"Shipment Parcel Template": [
+			{
+				"fieldname": "is_default",
+				"label": _("Default"),
+				"fieldtype": "Check",
+				"insert_after": "weight",
+			},
+		],
 		"Delivery Note": [
 			{
 				"fieldname": "shipping_sec_break",
