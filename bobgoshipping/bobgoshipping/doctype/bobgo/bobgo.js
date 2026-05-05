@@ -27,6 +27,7 @@ frappe.ui.form.on("BobGo", {
 			"bobgoshipping.bobgoshipping.doctype.bobgo.bobgo.refresh_webhook_status",
 			"Webhook status refreshed."
 		);
+		bindParcelTemplateSyncButton(frm);
 	},
 });
 
@@ -82,6 +83,33 @@ function bindActionButton(frm, fieldname, method, successMessage) {
 					"shipment_submission_status_webhook_subscribed",
 				]);
 				frappe.show_alert({ message: __(successMessage), indicator: "green" });
+			},
+		});
+	});
+}
+
+function bindParcelTemplateSyncButton(frm) {
+	const field = frm.fields_dict.sync_parcel_templates;
+	if (!field || !field.$input || field.$input.data("bobgo-action-bound")) {
+		return;
+	}
+
+	field.$input.data("bobgo-action-bound", true);
+	field.$input.on("click", () => {
+		frappe.call({
+			method: "bobgoshipping.bobgoshipping.doctype.bobgo.bobgo.sync_parcel_templates",
+			freeze: true,
+			freeze_message: __("Syncing Bob Go parcel templates"),
+			callback: function (r) {
+				if (!r.message) {
+					return;
+				}
+
+				const message = __(
+					"Parcel templates synced: {0} created, {1} updated, {2} skipped.",
+					[r.message.created || 0, r.message.updated || 0, r.message.skipped || 0]
+				);
+				frappe.show_alert({ message, indicator: "green" });
 			},
 		});
 	});

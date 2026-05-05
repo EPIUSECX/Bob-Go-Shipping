@@ -4,7 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
-from frappe.utils import get_url
+from frappe.utils import flt, get_url
 from urllib.parse import quote
 
 from .client import (
@@ -71,6 +71,92 @@ def refresh_webhook_status():
 	tracking_url, submission_url, bobgo, bobgo_utils = get_webhook_sync_context()
 	existing_subscriptions = get_existing_webhook_subscriptions(bobgo_utils)
 	return save_webhook_subscription_statuses(bobgo, existing_subscriptions, tracking_url, submission_url)
+
+
+@frappe.whitelist()
+def sync_parcel_templates():
+	frappe.only_for("System Manager")
+
+	bobgo_utils = get_bobgo_utils()
+	packages = bobgo_utils.get_packages()
+	result = {"created": 0, "updated": 0, "skipped": 0, "total": len(packages)}
+	used_template_names = set()
+
+	for idx, package in enumerate(packages, start=1):
+		template = get_parcel_template_from_package(package, idx, used_template_names)
+		if not template:
+			result["skipped"] += 1
+			continue
+
+		existing_name = frappe.db.exists(
+			"Shipment Parcel Template", {"parcel_template_name": template["parcel_template_name"]}
+		)
+		if existing_name:
+			doc = frappe.get_doc("Shipment Parcel Template", existing_name)
+			doc.update(template)
+			doc.save()
+			result["updated"] += 1
+		else:
+			doc = frappe.new_doc("Shipment Parcel Template")
+			doc.update(template)
+			doc.insert()
+			result["created"] += 1
+
+	frappe.db.commit()
+	return result
+
+
+def get_parcel_template_from_package(
+	package: dict, idx: int, used_template_names: set[str]
+) -> dict | None:
+	name = (package.get("name") or "").strip()
+	length = flt(package.get("length_cm") or package.get("length"))
+	width = flt(package.get("width_cm") or package.get("width"))
+	height = flt(package.get("height_cm") or package.get("height"))
+
+	if not name or length <= 0 or width <= 0 or height <= 0:
+		return None
+
+	weight = flt(
+		package.get("weight_kg")
+		or package.get("weight")
+		or package.get("volumetric_weight")
+		or package.get("volumetric_weight_kg")
+	)
+	if weight <= 0:
+		weight = get_bobgo_volumetric_weight(length, width, height)
+
+	return {
+		"parcel_template_name": get_unique_parcel_template_name(name, package, idx, used_template_names),
+		"length": length,
+		"width": width,
+		"height": height,
+		"weight": weight,
+	}
+
+
+def get_unique_parcel_template_name(
+	name: str, package: dict, idx: int, used_template_names: set[str]
+) -> str:
+	if name not in used_template_names:
+		used_template_names.add(name)
+		return name
+
+	package_id = package.get("id")
+	if package_id:
+		candidate = _("{0} (Bob Go {1})").format(name, package_id)
+	else:
+		candidate = _("{0} (Bob Go {1})").format(name, idx)
+
+	while candidate in used_template_names:
+		candidate = f"{candidate[:130]} {frappe.generate_hash(length=8)}"
+
+	used_template_names.add(candidate)
+	return candidate
+
+
+def get_bobgo_volumetric_weight(length: float, width: float, height: float) -> float:
+	return flt((length * width * height) / 4000, 3)
 
 
 def get_bobgo_webhook_url(webhook_type: str) -> str:

@@ -303,6 +303,9 @@ class BobGoUtils:
 			"tracking_url": "",
 		}
 
+	def get_packages(self) -> list[dict]:
+		return normalize_packages(self.request("GET", "packages"))
+
 	def extract_rates(self, response_data: Any) -> list[dict]:
 		if isinstance(response_data, list):
 			return response_data
@@ -492,6 +495,19 @@ def normalize_webhook_subscriptions(response_data: Any) -> list[dict]:
 			value = response_data.get(key)
 			if isinstance(value, list):
 				return [subscription for subscription in value if isinstance(subscription, dict)]
+
+	return []
+
+
+def normalize_packages(response_data: Any) -> list[dict]:
+	if isinstance(response_data, list):
+		return [package for package in response_data if isinstance(package, dict)]
+
+	if isinstance(response_data, dict):
+		for key in ("packages", "data", "results"):
+			value = response_data.get(key)
+			if isinstance(value, list):
+				return [package for package in value if isinstance(package, dict)]
 
 	return []
 
