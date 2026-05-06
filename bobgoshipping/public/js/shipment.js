@@ -6,6 +6,10 @@ frappe.ui.form.on("Shipment", {
 		frm.events.set_default_parcel_template(frm);
 	},
 
+	parcel_template: function (frm) {
+		frm.events.apply_parcel_template(frm);
+	},
+
 	refresh: function (frm) {
 		if (frm.doc.docstatus === 1 && !frm.doc.shipment_id) {
 			frm.add_custom_button(__("Fetch Shipping Rates"), function () {
@@ -76,6 +80,28 @@ frappe.ui.form.on("Shipment", {
 					frm.set_value("parcel_template", r.message);
 				}
 			},
+		});
+	},
+
+	apply_parcel_template: function (frm) {
+		if (!frm.doc.parcel_template) {
+			return;
+		}
+
+		frappe.model.with_doc("Shipment Parcel Template", frm.doc.parcel_template, () => {
+			const parcel_template = frappe.model.get_doc(
+				"Shipment Parcel Template",
+				frm.doc.parcel_template
+			);
+			const row = get_template_target_row(frm);
+
+			row.length = parcel_template.length;
+			row.width = parcel_template.width;
+			row.height = parcel_template.height;
+			row.weight = parcel_template.weight;
+			row.count = row.count || 1;
+
+			frm.refresh_field("shipment_parcel");
 		});
 	},
 
@@ -157,6 +183,23 @@ frappe.ui.form.on("Shipment", {
 		});
 	},
 });
+
+function get_template_target_row(frm) {
+	const rows = frm.doc.shipment_parcel || [];
+	const empty_row = rows.find((row) => {
+		return !row.length && !row.width && !row.height && !row.weight;
+	});
+
+	if (empty_row) {
+		return empty_row;
+	}
+
+	if (rows.length === 1) {
+		return rows[0];
+	}
+
+	return frappe.model.add_child(frm.doc, "Shipment Parcel", "shipment_parcel");
+}
 
 function select_from_available_services(frm, available_services) {
 	const arranged_services = available_services.reduce(
