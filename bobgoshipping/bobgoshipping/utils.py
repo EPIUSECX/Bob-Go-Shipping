@@ -7,13 +7,21 @@ from frappe import _
 from frappe.utils.data import get_link_to_form
 
 
+TRACKING_NUMBER_PLACEHOLDER = re.compile(r"{{\s*tracking_number\s*}}")
+
+
 def get_tracking_url(carrier, tracking_number):
 	# Return the formatted Tracking URL.
 	tracking_url = ""
 	url_reference = frappe.get_value("Parcel Service", carrier, "url_reference")
 	if url_reference:
-		tracking_url = frappe.render_template(url_reference, {"tracking_number": tracking_number})
+		tracking_url = format_tracking_url_reference(url_reference, tracking_number)
 	return tracking_url
+
+
+def format_tracking_url_reference(url_reference, tracking_number):
+	tracking_number = "" if tracking_number is None else str(tracking_number)
+	return TRACKING_NUMBER_PLACEHOLDER.sub(tracking_number, url_reference)
 
 
 def get_address(address_name):

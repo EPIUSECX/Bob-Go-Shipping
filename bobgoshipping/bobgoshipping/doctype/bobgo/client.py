@@ -299,7 +299,7 @@ class BobGoUtils:
 		return {
 			"awb_number": ", ".join(awb_numbers),
 			"tracking_status": normalize_erpnext_tracking_status(tracking_statuses),
-			"tracking_status_info": ", ".join(filter(None, tracking_status_info)),
+			"tracking_status_info": ", ".join(info for info in tracking_status_info if info),
 			"tracking_url": "",
 		}
 
@@ -391,7 +391,7 @@ class BobGoUtils:
 		return parcel_list
 
 	def get_contact_full_name(self, contact):
-		return " ".join(filter(None, [contact.first_name, contact.last_name]))
+		return " ".join(name for name in [contact.first_name, contact.last_name] if name)
 
 	def extract_label_content(self, response: requests.Response, tracking_references: list[str]) -> bytes:
 		content = response.content or b""

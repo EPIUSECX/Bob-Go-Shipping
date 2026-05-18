@@ -102,7 +102,6 @@ def sync_parcel_templates():
 			doc.insert()
 			result["created"] += 1
 
-	frappe.db.commit()
 	return result
 
 

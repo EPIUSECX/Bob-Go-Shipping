@@ -2,7 +2,7 @@
 
 BobGoShipping connects ERPNext's standard Shipment workflow to Bob Go. The app lets ERPNext users fetch Bob Go courier rates, create Bob Go shipments from selected services, print PDF shipping labels, and keep shipment tracking information synced on ERPNext Shipments and linked Delivery Notes.
 
-Bob Go: https://www.bobgo.co.za/
+Bob Go is the courier aggregation platform this app integrates with.
 
 ## Key features
 
@@ -43,26 +43,9 @@ The submitted Shipment stores Bob Go identifiers, carrier, service, amount, AWB,
 
 The app does not require extra Ubuntu/apt packages on Frappe Cloud.
 
-## Installation
+## What the app adds to ERPNext
 
-### Frappe Cloud
-
-Install **BobGoShipping** from the Frappe Cloud Marketplace on the ERPNext site where shipments will be booked. After installation completes, reload ERPNext Desk and configure the app as described below.
-
-### Self-hosted Frappe Bench
-
-```bash
-cd $PATH_TO_YOUR_BENCH
-bench get-app https://github.com/EPIUSECX/Bob-Go-Shipping.git --branch main
-bench --site <site-name> install-app bobgoshipping
-bench --site <site-name> migrate
-bench build --app bobgoshipping
-bench restart
-```
-
-## What installation adds to ERPNext
-
-On installation, the app creates read-only custom fields on **Delivery Note** under a **Shipping Details** section:
+The app creates read-only custom fields on **Delivery Note** under a **Shipping Details** section:
 
 - Delivery Type
 - Parcel Service
