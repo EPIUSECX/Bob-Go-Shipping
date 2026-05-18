@@ -83,8 +83,8 @@ doctype_js = {"Shipment": "public/js/shipment.js"}
 # 	"filters": "bobgoshipping.utils.jinja_filters"
 # }
 
-# Installation
-# ------------
+# App Setup Hooks
+# ---------------
 
 # before_install = "bobgoshipping.install.before_install"
 after_install = "bobgoshipping.install.after_install"

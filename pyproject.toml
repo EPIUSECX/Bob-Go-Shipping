@@ -5,7 +5,7 @@ authors = [
 ]
 description = "Bob Go Shipping integration"
 requires-python = ">=3.14"
-readme = "README.md"
+readme = "PACKAGE_DESCRIPTION.md"
 dynamic = ["version"]
 dependencies = [
     # "frappe~=16.0.0" # Installed and managed by bench.
