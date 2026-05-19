@@ -220,7 +220,7 @@ Confirm the Shipment has a Bob Go AWB/tracking reference. The app expects Bob Go
 
 ## Support and maintenance
 
-Cohenix: https://www.cohenix.com/
+Cohenix Website: https://www.cohenix.com/
 
 Maintainer: Cohenix Support <support@cohenix.com>
 
