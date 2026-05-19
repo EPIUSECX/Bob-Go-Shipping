@@ -220,14 +220,7 @@ Confirm the Shipment has a Bob Go AWB/tracking reference. The app expects Bob Go
 
 ## Development
 
-This app uses pre-commit for code formatting and linting:
-
-```bash
-cd apps/bobgoshipping
-pre-commit install
-```
-
-Configured development tools include ruff, eslint, and prettier.
+Configured development tools include pre-commit, ruff, eslint, and prettier.
 
 ## Support and maintenance
 
