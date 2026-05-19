@@ -218,10 +218,6 @@ The app matches Bob Go webhooks to ERPNext Shipments by Bob Go tracking referenc
 
 Confirm the Shipment has a Bob Go AWB/tracking reference. The app expects Bob Go to return a valid PDF label. If Bob Go returns a non-PDF response, the details are written to the ERPNext Error Log.
 
-## Development
-
-Configured development tools include pre-commit, ruff, eslint, and prettier.
-
 ## Support and maintenance
 
 Cohenix: https://www.cohenix.com/
